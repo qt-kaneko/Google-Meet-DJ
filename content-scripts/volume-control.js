@@ -66,24 +66,19 @@ class VolumeControl
   {
     console.debug(`[Google Meet DJ] Registering interceptor...`);
 
-    let UObject = window.wrappedJSObject.Object; // Unwrapped Object
-    UObject.u_defineProperty = UObject.defineProperty;
-    UObject.defineProperty = (obj, prop, descriptor) => UObject.u_defineProperty(obj, prop, cloneInto(descriptor, window, {cloneFunctions: true}));
-
-    let UHTMLMediaElement = window.wrappedJSObject.HTMLMediaElement; // Unwrapped HTMLMediaElement
-
-    let mediaProto = UHTMLMediaElement.prototype;
+    let mediaProto = wrappedJSObject.HTMLMediaElement.prototype;
     console.debug(`[Google Meet DJ] Media prototype:`, mediaProto);
 
-    let mediaVolume = UObject.getOwnPropertyDescriptor(mediaProto, `volume`);
+    let mediaVolume = wrappedJSObject.Object.getOwnPropertyDescriptor(mediaProto, `volume`);
     console.debug(`[Google Meet DJ] Media volume:`, mediaVolume);
     this.#mediaVolumeSetFunc = mediaVolume.set; // Save original volume setter
 
     // Replace original volume setter with ours
-    UObject.defineProperty(mediaProto, `volume`, {
+    let descriptor = {
       configurable: true,
       set: this.#onMediaVolumeSet
-    });
+    };
+    wrappedJSObject.Object.defineProperty(mediaProto, `volume`, cloneInto(descriptor, window, {cloneFunctions: true}));
 
     console.debug(`[Google Meet DJ] Interceptor registered successfully!`);
   }
