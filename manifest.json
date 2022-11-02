@@ -3,13 +3,9 @@
   "name": "Google Meet DJ",
   "version": "1.0.0",
   "icons": {"128": "./icon.png"},
-  "description": "Volume control for Google Meet.",
-
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "google-meet-dj@qt-kaneko.github.io"
-    }
-  },
+  "description": "Simple volume control for Google Meet.",
+  "homepage_url": "https://github.com/qt-kaneko/Google-Meet-DJ",
+  "browser_specific_settings": {"gecko": {"id": "google-meet-dj@qt-kaneko.github.io"}},
 
   "permissions": ["activeTab"],
 
