@@ -17,28 +17,27 @@ class VolumeControl
   {
     this.#volume = value;
 
-    for (let element of document.querySelectorAll(`audio`))
-    {
-      // Call original volume setter to bypass interception
-      this.#mediaVolumeSetFunc.call(element, value); // element.volume = value
-    }
+    let convertedVolume;
+    if (this.#volume < 0) throw `value must be greater than 0`;
+    else if (this.#volume < 1) convertedVolume = -1 + this.#volume;
+    else convertedVolume = this.#volume;
+
+    console.debug(`[Google Meet DJ] Converted volume from`, this.#volume, `to`, convertedVolume);
+
+    this.#gain.value = convertedVolume;
   }
 
   /** @type {Number} */
   static #volume = 1;
 
-  /** 
-   * Original HTMLMediaElement.volume.set
-   * 
-   * @type {Function}
-   */
-  static #mediaVolumeSetFunc;
+  static #gain;
+  static #gainNode;
 
   static
   {
     console.debug(`[Google Meet DJ] Starting...`);
 
-    this.#interceptVolumeChanges();
+    this.#redirectAudio();
 
     // Register "message-exported" members
     browser.runtime.onMessage.addListener((message, sender, sendResponse) => { // this.volume getter
@@ -58,28 +57,40 @@ class VolumeControl
     });
   }
 
-  static #onMediaVolumeSet(value)
+  static #redirectAudio(element)
   {
-    console.debug(`[Google Meet DJ] Volume change intercepted, passed value was:`, value);
-  }
-  static #interceptVolumeChanges()
-  {
-    console.debug(`[Google Meet DJ] Registering interceptor...`);
+    console.debug(`Setting up audio redirection...`);
 
-    let mediaProto = wrappedJSObject.HTMLMediaElement.prototype;
-    console.debug(`[Google Meet DJ] Media prototype:`, mediaProto);
+    let context = new wrappedJSObject.AudioContext();
 
-    let mediaVolume = wrappedJSObject.Object.getOwnPropertyDescriptor(mediaProto, `volume`);
-    console.debug(`[Google Meet DJ] Media volume:`, mediaVolume);
-    this.#mediaVolumeSetFunc = mediaVolume.set; // Save original volume setter
+    this.#gainNode = new wrappedJSObject.GainNode(context);
+    this.#gainNode.connect(context.destination);
 
-    // Replace original volume setter with ours
-    let descriptor = {
-      configurable: true,
-      set: this.#onMediaVolumeSet
-    };
-    wrappedJSObject.Object.defineProperty(mediaProto, `volume`, cloneInto(descriptor, window, {cloneFunctions: true}));
+    for (let audio of wrappedJSObject.document.querySelectorAll(`audio`))
+    {
+      let source = context.createMediaElementSource(audio);
+      source.connect(this.#gainNode);
+    }
+    new wrappedJSObject.MutationObserver((mutationList, observer) => {
+      for (let mutation of mutationList)
+      {
+        for (let addedElement of mutation.addedNodes)
+        {
+          console.debug(addedElement);
 
-    console.debug(`[Google Meet DJ] Interceptor registered successfully!`);
+          if (addedElement.nodeName === `AUDIO`)
+          {
+            console.debug(`FUCK!!!`);
+
+            let source = context.createMediaElementSource(cloneInto(audio, window, {cloneFunctions: true}));
+            source.connect(this.#gainNode);
+          }
+        }
+      }
+    }).observe(wrappedJSObject.document.documentElement, cloneInto({childList: true, subtree: true}, wrappedJSObject.window));
+
+    this.#gain = this.#gainNode.gain;
+
+    console.debug(`Audio redirection has been set up successfully.`);
   }
 }

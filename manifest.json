@@ -12,7 +12,7 @@
   "content_scripts": [{
     "matches": ["*://meet.google.com/*"],
     "js": ["./content-scripts/volume-control.js"],
-    "run_at": "document_end"
+    "run_at": "document_start"
   }],
 
   "page_action": {

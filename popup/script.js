@@ -32,7 +32,7 @@ async function onLoad()
 
 async function onVolumeChange(e)
 {
-  let newVolume = e.target.value;
+  let newVolume = Number.parseFloat(e.target.value);
 
   let currentTab = await getCurrentTab();
   await browser.tabs.sendMessage(currentTab.id, {
